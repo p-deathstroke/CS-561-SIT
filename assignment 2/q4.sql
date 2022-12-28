@@ -1,0 +1,24 @@
+with Q1 as(
+	select cust as CUSTOMER, prod as PRODUCT, month as MONTH,sum(quant) as SUM_QUANT
+	from sales
+	group by CUSTOMER, PRODUCT, MONTH
+	order by CUSTOMER, PRODUCT, MONTH),
+Q2 as ( 	
+	select Q1.CUSTOMER, Q1.PRODUCT, sum(Q1.SUM_QUANT) as ALL_SUM
+	from Q1 
+	group by CUSTOMER, PRODUCT),
+Q3 as (
+	select Q1.CUSTOMER, Q1.PRODUCT, Q1.MONTH, Q1.SUM_QUANT, sum(TEMP_TABLE.SUM_QUANT) as SUM_SUM 
+	from Q1 join Q1 as TEMP_TABLE on TEMP_TABLE.MONTH <= Q1.MONTH and Q1.CUSTOMER = TEMP_TABLE.CUSTOMER and Q1.PRODUCT = TEMP_TABLE.PRODUCT
+	group by Q1.CUSTOMER, Q1.PRODUCT, Q1.MONTH, Q1.SUM_QUANT
+	order by CUSTOMER, PRODUCT, MONTH),
+Q4 as (
+	select Q3.CUSTOMER, Q3.PRODUCT, Q3.MONTH
+	from Q3,Q2 
+	where Q3.CUSTOMER = Q2.CUSTOMER and Q3.PRODUCT = Q2.PRODUCT and Q3.SUM_SUM >= (0.75 * Q2.ALL_SUM) 
+	order by CUSTOMER, PRODUCT, MONTH)
+	
+	select CUSTOMER, PRODUCT, min(MONTH) as "75% of the sales per month" 
+	from Q4 group by CUSTOMER, PRODUCT
+	order by CUSTOMER, PRODUCT
+
